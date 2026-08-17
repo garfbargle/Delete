@@ -4,6 +4,9 @@ target_cpu = "arm64"
 # Chromium's upstream experimental Android extension runtime.
 is_desktop_android = true
 
+# Keep Delete install/update identity separate from stock Chromium.
+chrome_public_manifest_package = "com.garfbargle.delete"
+
 # Release-style local build without Google-internal branding/data.
 is_debug = false
 is_component_build = false

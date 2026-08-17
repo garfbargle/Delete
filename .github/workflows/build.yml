@@ -2,6 +2,8 @@ name: Build Android
 
 on:
   workflow_dispatch:
+  push:
+    branches: [main]
 
 permissions:
   contents: read
@@ -27,13 +29,13 @@ jobs:
       - name: Apply downstream patches
         run: bash scripts/apply-patches.sh
 
-      - name: Build APK
+      - name: Build unsigned APK
         run: bash scripts/build.sh
 
-      - name: Upload APK
+      - name: Upload test artifact
         uses: actions/upload-artifact@v4
         with:
-          name: Delete-${{ github.sha }}-arm64
+          name: delete-build-${{ github.sha }}
           path: |
             artifacts/*.apk
             artifacts/*.sha256

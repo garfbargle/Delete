@@ -4,6 +4,8 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 # shellcheck source=/dev/null
 source "$ROOT/chromium.version"
+# shellcheck source=/dev/null
+source "$ROOT/app.version"
 
 WORKDIR="${DELETE_WORKDIR:-$HOME/.cache/delete-chromium}"
 DEPOT_TOOLS="$WORKDIR/depot_tools"
@@ -18,20 +20,36 @@ if [[ ! -d "$SRC/.git" ]]; then
   exit 1
 fi
 
-cd "$SRC"
-gn gen "$OUT" --args="$(cat "$ROOT/build/args.arm64.gn")"
-autoninja -C "$OUT" chrome_public_apk
-
-APK="$OUT/apks/ChromePublic.apk"
-if [[ ! -f "$APK" ]]; then
-  echo "Expected APK not found at $APK" >&2
-  find "$OUT" -maxdepth 3 -type f -name '*.apk' -print >&2 || true
+if [[ ! "$DELETE_VERSION_CODE" =~ ^[0-9]+$ ]] || (( DELETE_VERSION_CODE < 1 )); then
+  echo "DELETE_VERSION_CODE must be a positive integer." >&2
   exit 1
 fi
 
+GN_ARGS="$(cat "$ROOT/build/args.arm64.gn")"
+GN_ARGS+=$'\nandroid_override_version_name = "'"$DELETE_VERSION_NAME"$'"'
+GN_ARGS+=$'\nandroid_override_version_code = "'"$DELETE_VERSION_CODE"$'"'
+
+cd "$SRC"
+gn gen "$OUT" --args="$GN_ARGS"
+autoninja -C "$OUT" chrome_public_apk
+
+# chrome_public_apk also produces a raw unsigned APK before Chromium's
+# development signing/finalization step. Library wants this exact boundary.
+APK="$OUT/gen/chrome/android/chrome_public_apk/chrome_public_apk_unsigned.apk"
+if [[ ! -f "$APK" ]]; then
+  mapfile -t candidates < <(find "$OUT/gen/chrome/android/chrome_public_apk" -type f -name '*_unsigned.apk' -print 2>/dev/null | sort)
+  if (( ${#candidates[@]} != 1 )); then
+    echo "Expected one raw unsigned APK; found ${#candidates[@]}." >&2
+    printf '%s\n' "${candidates[@]:-}" >&2
+    exit 1
+  fi
+  APK="${candidates[0]}"
+fi
+
+rm -rf "$ARTIFACTS"
 mkdir -p "$ARTIFACTS"
-DEST="$ARTIFACTS/Delete-${CHROMIUM_VERSION}-arm64.apk"
+DEST="$ARTIFACTS/Delete-${DELETE_VERSION_NAME}-chromium-${CHROMIUM_VERSION}-arm64-unsigned.apk"
 cp "$APK" "$DEST"
 sha256sum "$DEST" > "$DEST.sha256"
 
-echo "Built $DEST"
+echo "Built unsigned APK: $DEST"

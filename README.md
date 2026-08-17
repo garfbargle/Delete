@@ -1,29 +1,31 @@
 # Delete
 
-A minimal downstream build of upstream Chromium for Android, using Chromium's experimental Desktop Android extension runtime.
+Minimal downstream Chromium for Android with Chromium's upstream extension-capable Desktop Android runtime.
 
-## Principles
+## Baseline
 
-- Chromium is pinned to an explicit upstream revision.
-- Nothing updates automatically.
-- GitHub Actions builds the pinned source and uploads an APK artifact.
-- Releases are manual and explicit.
-- Local changes live as a small patch stack instead of a Chromium source mirror.
-
-## Current baseline
-
-Chromium `151.0.7922.71`, ARM64, unbranded Chromium, built with `is_desktop_android = true` so the upstream Android extension runtime is included.
-
-## Runner
-
-Chromium needs substantially more disk/RAM than a normal GitHub-hosted runner provides. The workflows target a self-hosted Linux x64 runner with the labels:
-
-`self-hosted`, `linux`, `x64`, `chromium`
-
-The checkout/build cache is kept outside the Actions workspace at `$HOME/.cache/delete-chromium` by default. Set `DELETE_WORKDIR` on the runner to move it elsewhere.
+- Chromium `151.0.7922.71` pinned by exact revision
+- ARM64
+- package: `com.garfbargle.delete`
+- Delete version: `0.1.0` / versionCode `1`
+- `is_desktop_android = true`
 
 ## Build
 
-Run **Actions → Build Android → Run workflow**. The result is uploaded as an Actions artifact.
+GitHub Actions builds the pinned Chromium source and our patch stack. The Chromium checkout/cache lives on a self-hosted runner labeled:
 
-Run **Actions → Release → Run workflow** only when we intentionally want to publish a release.
+`self-hosted`, `linux`, `x64`, `chromium`
+
+Regular **Build Android** runs upload an unsigned test artifact whose name is not consumed by Library.
+
+## Release
+
+Releases are explicit. Run **Actions → Release → Run workflow** only when we want to ship.
+
+That workflow uploads exactly one raw unsigned APK as the Actions artifact `library-unsigned-apk`. `.library.json` enrolls the package in `garfbargle/library` managed signing. Library aligns/signs it and publishes the stable GitHub Release back to this repository.
+
+Bump `app.version` before each release. `DELETE_VERSION_CODE` must always increase.
+
+## Downstream changes
+
+Keep Chromium changes as ordered patches under `patches/`. Update the pinned Chromium revision deliberately, rebuild, and only promote it after tests pass.

@@ -19,6 +19,9 @@ jobs:
       - name: Checkout Delete
         uses: actions/checkout@v4
 
+      - name: Preflight runner
+        run: bash scripts/runner-preflight.sh
+
       - name: Bootstrap pinned Chromium
         env:
           INSTALL_BUILD_DEPS: "1"

@@ -1,0 +1,4 @@
+artifacts/
+.work/
+*.swp
+.DS_Store

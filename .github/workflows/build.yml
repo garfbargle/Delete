@@ -1,0 +1,41 @@
+name: Build Android
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: delete-android-build
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: [self-hosted, linux, x64, chromium]
+    timeout-minutes: 360
+
+    steps:
+      - name: Checkout Delete
+        uses: actions/checkout@v4
+
+      - name: Bootstrap pinned Chromium
+        env:
+          INSTALL_BUILD_DEPS: "1"
+        run: bash scripts/bootstrap.sh
+
+      - name: Apply downstream patches
+        run: bash scripts/apply-patches.sh
+
+      - name: Build APK
+        run: bash scripts/build.sh
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: Delete-${{ github.sha }}-arm64
+          path: |
+            artifacts/*.apk
+            artifacts/*.sha256
+          if-no-files-found: error
+          retention-days: 14

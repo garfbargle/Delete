@@ -1,0 +1,12 @@
+{
+  "name": "Delete",
+  "tagline": "Minimal Chromium for Android with real extension support.",
+  "category": "Utilities",
+  "sourceVisible": true,
+  "provenance": "library-managed",
+  "assetPattern": "Delete-.*\\.apk$",
+  "managedSigning": {
+    "packageName": "com.garfbargle.delete",
+    "tagPrefix": "android-v"
+  }
+}
